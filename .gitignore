@@ -1,0 +1,2 @@
+# Ignore all .env files throughout the entire project
+*.env
