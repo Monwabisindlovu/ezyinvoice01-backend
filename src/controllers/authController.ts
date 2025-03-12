@@ -27,13 +27,13 @@ const authenticateJWT = async (req: Request, res: Response, next: NextFunction) 
 
     const token = authHeader.split(" ")[1];
     const decoded: JwtPayload = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-    const user = await User.findById(decoded.id).exec(); // Ensure use of exec()
+    const user = await User.findById(decoded.id).exec();
 
     if (!user) {
       return res.status(401).json({ message: "Invalid token." });
     }
 
-    req.user = user; // Ensure this is set as a Mongoose instance
+    req.user = user;
     next();
   } catch (error) {
     console.error('JWT Authentication Error:', error);
@@ -165,7 +165,6 @@ const AuthController = {
       let user = await User.findOne({ email }).exec();
   
       if (!user) {
-        // If creating a new user, provide a dummy password (if your schema requires one)
         user = new User({
           email,
           googleId,
@@ -176,13 +175,16 @@ const AuthController = {
         await user.save();
         console.log('🔹 New Google user created:', user);
       } else {
-        // Ensure that the user is a full Mongoose document
         if (!(user instanceof User)) {
           user = await User.findById(user._id).exec();
         }
         console.log('🔹 Existing user found:', user);
       }
   
+      // Ensure user is not null before generating JWT
+      if (!user) {
+        return res.status(404).json({ message: 'User not found after checking' });
+      }
       const jwtToken = user.generateJwtToken();
       console.log('🔹 JWT Token generated:', jwtToken);
   
@@ -208,12 +210,15 @@ const AuthController = {
         return res.status(400).json({ message: 'User not found' });
       }
 
-      // Generate a reset token
       const resetToken = encryptUtils.generateRandomToken();
       if (user.email === emailOrPhone) {
         await sendPasswordResetEmail(user.email, resetToken);
         res.json({ message: 'Password reset email sent' });
       } else if (user.phone === emailOrPhone) {
+        // Ensure user.phone is a defined string before sending SMS
+        if (!user.phone) {
+          return res.status(400).json({ message: 'User phone number is missing' });
+        }
         await sendResetSMS(user.phone, resetToken);
         res.json({ message: 'Password reset SMS sent' });
       }
@@ -230,6 +235,7 @@ const AuthController = {
       }
     }
   },
+  
   resetPassword: async (req: Request, res: Response) => {
     try {
       const { token, newPassword } = req.body;

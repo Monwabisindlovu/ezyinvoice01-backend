@@ -5,7 +5,7 @@
     "scripts": {
         "start": "ts-node src/server.ts",
         "dev": "nodemon --exec ts-node src/server.ts",
-        "build": "tsc",
+        "build": "npx tsc", 
         "prod": "node dist/server.js"
     },
     "dependencies": {
@@ -14,6 +14,7 @@
         "bcryptjs": "^2.4.3",
         "bignumber.js": "^9.1.2",
         "bson": "^6.10.3",
+        "chmod": "^0.2.1",
         "connect-mongo": "^5.1.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
@@ -48,6 +49,6 @@
         "@types/passport": "^1.0.17",
         "@types/passport-google-oauth20": "^2.0.16",
         "ts-node": "^10.9.2",
-        "typescript": "^5.7.3"
+        "typescript": "^5.8.2"
     }
 }
