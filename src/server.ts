@@ -1,14 +1,16 @@
+// Load .env variables before any other import
+import dotenv from 'dotenv';
+dotenv.config(); // ✅ Load environment variables from .env file
+
+// Now import everything else
 import express, { Request, Response, NextFunction } from 'express';
 import cors, { CorsOptions } from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import passport from 'passport';
 import session from 'express-session';
 import MongoStore from 'connect-mongo'; // ✅ Session store for production
 import './config/passportConfig'; // Ensure Passport config is loaded
 import authRoutes from './routes/authRoutes';
-
-dotenv.config();
 
 const app = express();
 
