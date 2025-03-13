@@ -5,7 +5,7 @@
     "scripts": {
         "start": "ts-node src/server.ts",
         "dev": "nodemon --exec ts-node src/server.ts",
-        "build": "npx tsc", 
+         "build": "npx --unsafe-perm tsc"
         "prod": "node dist/server.js"
     },
     "dependencies": {
