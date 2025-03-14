@@ -17,8 +17,8 @@ const app = express();
 // ✅ Allowed origins for CORS
 const allowedOrigins: string[] = [
   'http://localhost:3000', // Local development
-  'https://ezyinvoice01.vercel.app', // Deployed frontend
-  'https://accounts.google.com' // ✅ Allow Google OAuth
+  'https://ezyinvoice01.vercel.app',  // Deployed frontend
+  'https://accounts.google.com', // ✅ Allow Google OAuth
 ];
 
 const corsOptions: CorsOptions = {
@@ -36,7 +36,14 @@ const corsOptions: CorsOptions = {
 
 // ✅ Apply CORS middleware before other middlewares
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle pre-flight requests
+
+// ✅ Add COOP and COEP security headers
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin'); // Enforces same-origin policy
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp'); // Ensures resources are explicitly allowed
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,7 +60,8 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production', // ✅ Enable only in production
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'lax', // Adjust to 'strict' if needed
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days expiration (adjust as needed)
     },
   })
 );
@@ -92,6 +100,25 @@ mongoose
     console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
   });
+
+// ✅ Example of setting the authToken in a cookie (if using cookies for token storage)
+const setAuthCookie = (res: Response, token: string) => {
+  res.cookie('authToken', token, {
+    httpOnly: true, // Ensures cookie is not accessible via JavaScript
+    secure: process.env.NODE_ENV === 'production', // Only set Secure cookies in production
+    sameSite: 'lax', // or 'strict' depending on your needs
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days expiration (adjust as needed)
+  });
+};
+
+// ✅ Auth Routes Example (authRoutes.js or authRoutes.ts)
+authRoutes.post('/login', async (req: Request, res: Response) => {
+  // Your login logic to authenticate user and get token
+  const token = 'your-jwt-token'; // Example token after successful login
+  setAuthCookie(res, token); // Set the auth token in a cookie
+
+  res.json({ message: 'Logged in successfully', token });
+});
 
 // ✅ Start the Server
 const PORT = process.env.PORT || 5000; // Use PORT from environment or default to 5000
