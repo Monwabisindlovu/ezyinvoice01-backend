@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Session setup with MongoDB store (Recommended for Production)
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'your-secret-key', // Use a fallback secret if not set
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -77,9 +77,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ✅ MongoDB Connection using MONGO_URI
-const mongoURI = process.env.MONGO_URI;
+const mongoURI = process.env.MONGO_URI; // Get MONGO_URI from .env
 if (!mongoURI) {
-  throw new Error('MongoDB URI not provided in environment variables.');
+  throw new Error('MongoDB URI not provided in environment variables.'); // Throw error if MONGO_URI is missing
 }
 
 mongoose
@@ -94,7 +94,7 @@ mongoose
   });
 
 // ✅ Start the Server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // Use PORT from environment or default to 5000
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
