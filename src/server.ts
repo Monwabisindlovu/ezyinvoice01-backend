@@ -14,11 +14,10 @@ import authRoutes from './routes/authRoutes';
 
 const app = express();
 
-// ✅ Allowed origins for CORS
 const allowedOrigins: string[] = [
-  'http://localhost:3000', // Local development
-  'https://www.ezyinvoice.co.za',  // Deployed frontend
-  'https://accounts.google.com', // ✅ Allow Google OAuth
+  'http://localhost:3000',
+  'https://www.ezyinvoice.co.za',
+  'https://accounts.google.com',
 ];
 
 const corsOptions: CorsOptions = {
