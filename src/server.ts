@@ -17,7 +17,7 @@ const app = express();
 // ✅ Allowed origins for CORS
 const allowedOrigins: string[] = [
   'http://localhost:3000', // Local development
-  'https://ezyinvoice01.vercel.app',  // Deployed frontend
+  'https://www.ezyinvoice.co.za',  // Deployed frontend
   'https://accounts.google.com', // ✅ Allow Google OAuth
 ];
 
