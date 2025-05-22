@@ -11,9 +11,14 @@ import { sendResetSMS } from '../utils/smsService';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Function to validate password with specified rules
-const validatePassword = (password: string): boolean => {
-  const passwordPattern = /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{7,12}$/;
-  return passwordPattern.test(password);
+const validatePassword = (pwd: string): boolean => {
+  return (
+    pwd.length >= 7 &&
+    pwd.length <= 12 &&
+    /[A-Za-z]/.test(pwd) &&
+    /\d/.test(pwd) &&
+    /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+  );
 };
 
 // JWT Authentication Middleware
@@ -150,20 +155,20 @@ const AuthController = {
       if (!token) {
         return res.status(400).json({ message: 'Token is required.' });
       }
-  
+
       const ticket = await client.verifyIdToken({
         idToken: token,
         audience: process.env.GOOGLE_CLIENT_ID,
       });
-  
+
       const googlePayload = ticket.getPayload();
       if (!googlePayload) {
         return res.status(400).json({ message: 'Invalid Google token' });
       }
-  
+
       const { email, sub: googleId, name, picture } = googlePayload;
       let user = await User.findOne({ email }).exec();
-  
+
       if (!user) {
         user = new User({
           email,
@@ -180,14 +185,14 @@ const AuthController = {
         }
         console.log('🔹 Existing user found:', user);
       }
-  
+
       // Ensure user is not null before generating JWT
       if (!user) {
         return res.status(404).json({ message: 'User not found after checking' });
       }
       const jwtToken = user.generateJwtToken();
       console.log('🔹 JWT Token generated:', jwtToken);
-  
+
       res.status(200).json({ token: jwtToken, user });
     } catch (error) {
       console.error('Google Auth Error:', error);
@@ -197,7 +202,7 @@ const AuthController = {
       });
     }
   },
-  
+
   forgotPassword: async (req: Request, res: Response) => {
     try {
       const { emailOrPhone } = req.body;
@@ -215,7 +220,6 @@ const AuthController = {
         await sendPasswordResetEmail(user.email, resetToken);
         res.json({ message: 'Password reset email sent' });
       } else if (user.phone === emailOrPhone) {
-        // Ensure user.phone is a defined string before sending SMS
         if (!user.phone) {
           return res.status(400).json({ message: 'User phone number is missing' });
         }
@@ -235,25 +239,31 @@ const AuthController = {
       }
     }
   },
-  
-  resetPassword: async (req: Request, res: Response) => {
+
+  resetPassword: async (req: Request, res: Response): Promise<void> => {
+    const { emailOrPhone, verificationCode, token, newPassword } = req.body;
+
+    if (!validatePassword(newPassword)) {
+      res.status(400).json({
+        message:
+          'Password must be 7-12 characters long, contain at least one letter, one number, and one special character',
+      });
+      return;
+    }
+
+    if (!process.env.JWT_SECRET) {
+      res.status(500).json({ message: 'Server error: Missing JWT secret' });
+      return;
+    }
+
     try {
-      const { token, newPassword } = req.body;
-
-      if (!validatePassword(newPassword)) {
-        return res.status(400).json({
-          message: 'Password must be 7-12 characters long, contain at least one number and one special character',
-        });
-      }
-
-      if (!process.env.JWT_SECRET) {
-        return res.status(500).json({ message: 'Server error: Missing JWT secret' });
-      }
-
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
       const user = await User.findById(decoded.id);
 
-      if (!user) return res.status(400).json({ message: 'Invalid token' });
+      if (!user) {
+        res.status(400).json({ message: 'Invalid token or user not found' });
+        return;
+      }
 
       user.password = await encryptUtils.hashPassword(newPassword);
       await user.save();
